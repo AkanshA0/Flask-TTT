@@ -1,0 +1,10 @@
+- The main Flask app is in `app.py`. It manages routing, game state, and winner logic.
+- HTML templates are in the `templates/` directory. The main UI is in `index.html`.
+- Game state is stored in the Flask session, so each browser session is independent.
+- To add features, extend `app.py` and update `index.html` as needed.
+- To run locally: `pip install flask` then `python app.py`.
+- Use the `/reset` route to restart the game.
+- Keep UI logic in templates and game logic in Python for clarity.
+- Follow Flask best practices for structure and security.
+- For static assets, add them to a `static/` directory and reference in templates.
+- See `README.md` for setup and usage instructions.
