@@ -1,11 +1,10 @@
+
 # Flask Tic Tac Toe
 
-A simple web-based Tic Tac Toe game built with Flask. Two players can play in the browser, with the server maintaining game state.
+A simple web-based Tic Tac Toe game built with Flask.
 
-## Features
-- Two-player Tic Tac Toe
-- Game state managed on the server
-- Simple, clean web UI
+## Purpose
+This project demonstrates how to build, test, and benchmark a simple web application in both virtual machines (VMs) and Docker containers. It is designed for learning and comparing the performance, resource usage, and developer workflows of VMs vs containers.
 
 ## Setup
 1. Install dependencies:
@@ -27,7 +26,3 @@ A simple web-based Tic Tac Toe game built with Flask. Two players can play in th
 - Open the app in your browser
 - Click on a cell to make a move
 - The game will display the winner or a draw
-
----
-
-This is a minimal example. Extend as needed for features like AI opponent, persistent scores, or user authentication.
