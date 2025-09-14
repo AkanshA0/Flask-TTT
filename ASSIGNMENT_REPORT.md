@@ -36,18 +36,18 @@
 
 **Startup Time:** Measured from command to app ready
 
-Vagrant: `time python3 app.py`
+Vagrant: `time python3 app.py`<br>
 ![Vagrant Startup Time](screenshots/vagrant_startup_time.png)
 
-Docker: `time docker run -d --name tictactoeapp -p 4000:5000 tictactoe:latest`
+Docker: `time docker run -d --name tictactoeapp -p 4000:5000 tictactoe:latest`<br>
 ![Docker Startup Time](screenshots/docker_startup_time.png)
 
 **Memory Usage and CPU Utilization:** Measured via `docker stats` (container) and `top`/`htop` (VM)
 
-Vagrant: `htop`
+Vagrant: `htop`<br>
 ![Vagrant htop Output](screenshots/vagrant_htop.png)
 
-Docker: `docker stats`
+Docker: `docker stats`<br>
 ![Docker Stats Output](screenshots/docker_stats.png)
 
 **Request Throughput/Response Time:** Used `ab` (ApacheBench) for load testing: `ab -n 1000 -c 10 http://<ip>:<port>/`
