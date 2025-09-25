@@ -1,0 +1,152 @@
+version: 2.1
+
+executors:
+  py312:
+    docker:
+      - image: cimg/python:3.12
+    working_directory: ~/project
+  docker-host:
+    docker:
+      - image: cimg/base:stable
+    working_directory: ~/project
+
+commands:
+  restore_pip_cache:
+    steps:
+      - restore_cache:
+          keys:
+            - v1-pip-{{ arch }}-{{ checksum "requirements.txt" }}
+            - v1-pip-
+  save_pip_cache:
+    steps:
+      - save_cache:
+          key: v1-pip-{{ arch }}-{{ checksum "requirements.txt" }}
+          paths:
+            - ~/.cache/pip
+
+jobs:
+  test:
+    executor: py312
+    steps:
+      - checkout
+      - run: python -m pip install --upgrade pip
+      - restore_pip_cache
+      - run:
+          name: Install deps
+          command: |
+            pip install -r requirements.txt
+            pip install pyflakes pytest
+      - save_pip_cache
+      - run:
+          name: Lint
+          command: python -m pyflakes .
+      - run:
+          name: Run tests
+          command: pytest -q
+
+  build_image:
+    executor: docker-host
+    steps:
+      - checkout
+      - setup_remote_docker:
+          version: default
+          docker_layer_caching: true
+      - run:
+          name: Compute image tags
+          command: |
+            echo 'export SHA_SHORT=${CIRCLE_SHA1:0:7}' >> $BASH_ENV
+            echo 'export IMAGE_REPO="docker.io/${DOCKERHUB_USERNAME}/${IMAGE_NAME:-flask-demo}"' >> $BASH_ENV
+            source $BASH_ENV
+            echo "Building ${IMAGE_REPO}:${SHA_SHORT} and ${IMAGE_REPO}:latest"
+      - run:
+          name: Build (no push)
+          command: |
+            source $BASH_ENV
+            docker build -t "${IMAGE_REPO}:${SHA_SHORT}" -t "${IMAGE_REPO}:latest" .
+      - run:
+          name: Save image to workspace (for faster release)
+          command: |
+            source $BASH_ENV
+            docker save "${IMAGE_REPO}:${SHA_SHORT}" | gzip > image.tar.gz
+      - persist_to_workspace:
+          root: .
+          paths:
+            - image.tar.gz
+
+  # Manual approval gate — no steps, just a pause until someone clicks Approve.
+  hold_for_approval:
+    type: approval
+
+  release:
+    executor: docker-host
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - setup_remote_docker:
+          version: default
+          docker_layer_caching: true
+      - run:
+          name: Recompute tags
+          command: |
+            echo 'export SHA_SHORT=${CIRCLE_SHA1:0:7}' >> $BASH_ENV
+            echo 'export IMAGE_REPO="docker.io/${DOCKERHUB_USERNAME}/${IMAGE_NAME:-flask-demo}"' >> $BASH_ENV
+            source $BASH_ENV
+      - run:
+          name: Load image (if present) or rebuild
+          command: |
+            source $BASH_ENV
+            if [ -f image.tar.gz ]; then
+              gunzip -c image.tar.gz | docker load
+            fi
+            if ! docker image inspect "${IMAGE_REPO}:${SHA_SHORT}" >/dev/null 2>&1; then
+              echo "Workspace image missing; rebuilding..."
+              docker build -t "${IMAGE_REPO}:${SHA_SHORT}" -t "${IMAGE_REPO}:latest" .
+            fi
+      - run:
+          name: Docker login
+          command: echo "${DOCKERHUB_TOKEN}" | docker login -u "${DOCKERHUB_USERNAME}" --password-stdin
+      - run:
+          name: Push image tags
+          command: |
+            source $BASH_ENV
+            docker push "${IMAGE_REPO}:${SHA_SHORT}"
+            docker push "${IMAGE_REPO}:latest"
+      - run:
+          name: Trigger Render deploy (Deploy Hook)
+          command: |
+            if [ -z "${RENDER_DEPLOY_HOOK}" ]; then
+              echo "RENDER_DEPLOY_HOOK not set"; exit 1
+            fi
+            curl -fsS -X POST "${RENDER_DEPLOY_HOOK}"
+
+workflows:
+  version: 2
+  ci_cd:
+    jobs:
+      # Run tests on all branches
+      - test:
+          filters:
+            branches: { ignore: gh-pages }
+
+      # Only build/publish/deploy on main
+      - build_image:
+          requires:
+            - test
+          filters:
+            branches:
+              only: main
+
+      - hold_for_approval:
+          requires:
+            - build_image
+          filters:
+            branches:
+              only: main
+
+      - release:
+          requires:
+            - hold_for_approval
+          filters:
+            branches:
+              only: main
