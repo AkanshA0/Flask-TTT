@@ -1,1 +1,1 @@
-from .app import app, check_winner, new_board # noqa: F401
+from .app import app, check_winner, new_board

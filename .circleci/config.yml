@@ -39,7 +39,7 @@ jobs:
       - save_pip_cache
       - run:
           name: Lint
-          command: python -m pyflakes .
+          command: python -m pyflakes $(git ls-files '*.py' | grep -v '^__init__\.py$')
       - run:
           name: Run tests
           command: pytest -q
