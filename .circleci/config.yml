@@ -129,24 +129,24 @@ workflows:
           filters:
             branches: { ignore: gh-pages }
 
-      # Only build/publish/deploy on main
+      # Only build/publish/deploy on master
       - build_image:
           requires:
             - test
           filters:
             branches:
-              only: main
+              only: master
 
       - hold_for_approval:
           requires:
             - build_image
           filters:
             branches:
-              only: main
+              only: master
 
       - release:
           requires:
             - hold_for_approval
           filters:
             branches:
-              only: main
+              only: master
