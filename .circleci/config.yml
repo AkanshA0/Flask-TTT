@@ -55,14 +55,14 @@ jobs:
           name: Compute image tags
           command: |
             echo 'export SHA_SHORT=${CIRCLE_SHA1:0:7}' >> $BASH_ENV
-            echo 'export IMAGE_REPO="docker.io/${DOCKERHUB_USERNAME}/${IMAGE_NAME:-flask-demo}"' >> $BASH_ENV
+            echo 'export IMAGE_REPO="docker.io/${DOCKERHUB_USERNAME}/${IMAGE_NAME:-tictactoe}"' >> $BASH_ENV
             source $BASH_ENV
-            echo "Building ${IMAGE_REPO}:${SHA_SHORT} and ${IMAGE_REPO}:latest"
+            echo "Building ${IMAGE_REPO}:${SHA_SHORT} and ${IMAGE_REPO}:1.0"
       - run:
           name: Build (no push)
           command: |
             source $BASH_ENV
-            docker build -t "${IMAGE_REPO}:${SHA_SHORT}" -t "${IMAGE_REPO}:latest" .
+            docker build -t "${IMAGE_REPO}:${SHA_SHORT}" -t "${IMAGE_REPO}:1.0" .
       - run:
           name: Save image to workspace (for faster release)
           command: |
@@ -90,7 +90,7 @@ jobs:
           name: Recompute tags
           command: |
             echo 'export SHA_SHORT=${CIRCLE_SHA1:0:7}' >> $BASH_ENV
-            echo 'export IMAGE_REPO="docker.io/${DOCKERHUB_USERNAME}/${IMAGE_NAME:-flask-demo}"' >> $BASH_ENV
+            echo 'export IMAGE_REPO="docker.io/${DOCKERHUB_USERNAME}/${IMAGE_NAME:-tictactoe}"' >> $BASH_ENV
             source $BASH_ENV
       - run:
           name: Load image (if present) or rebuild
@@ -101,7 +101,7 @@ jobs:
             fi
             if ! docker image inspect "${IMAGE_REPO}:${SHA_SHORT}" >/dev/null 2>&1; then
               echo "Workspace image missing; rebuilding..."
-              docker build -t "${IMAGE_REPO}:${SHA_SHORT}" -t "${IMAGE_REPO}:latest" .
+              docker build -t "${IMAGE_REPO}:${SHA_SHORT}" -t "${IMAGE_REPO}:1.0" .
             fi
       - run:
           name: Docker login
@@ -111,7 +111,7 @@ jobs:
           command: |
             source $BASH_ENV
             docker push "${IMAGE_REPO}:${SHA_SHORT}"
-            docker push "${IMAGE_REPO}:latest"
+            docker push "${IMAGE_REPO}:1.0"
       - run:
           name: Trigger Render deploy (Deploy Hook)
           command: |
